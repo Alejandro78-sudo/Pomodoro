@@ -193,6 +193,146 @@
     generatePhrases();
     setInterval(generatePhrases, 20000);
 
-    // ==== Pomodoro Timer ====
-    let timer = null, isRunning = false, isWork = true, timeLeft = 25*60;
-    const
+   // ====== Pomodoro Timer ======
+    let timer = null;
+    let isRunning = false;
+    let isWork = true;
+    let timeLeft = 25 * 60;
+
+    const timerDisplay = document.getElementById("timer");
+    const workInput = document.getElementById("workInput");
+    const breakInput = document.getElementById("breakInput");
+    const alarmSound = document.getElementById("alarmSound");
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s < 10 ? "0" : ""}${s}`;
+    }
+
+    function updateTimer() {
+      if (!isRunning) return;
+      timeLeft--;
+      if (timeLeft <= 0) {
+        alarmSound.play();
+        isWork = !isWork;
+        timeLeft = (isWork ? parseInt(workInput.value) : parseInt(breakInput.value)) * 60;
+      }
+      timerDisplay.textContent = formatTime(timeLeft);
+    }
+
+    function startTimer() {
+      if (isRunning) return;
+      isRunning = true;
+      timer = setInterval(updateTimer, 1000);
+    }
+
+    function pauseTimer() {
+      clearInterval(timer);
+      isRunning = false;
+    }
+
+    function resetTimer() {
+      clearInterval(timer);
+      isRunning = false;
+      isWork = true;
+      timeLeft = parseInt(workInput.value) * 60;
+      timerDisplay.textContent = formatTime(timeLeft);
+    }
+
+    workInput.addEventListener('change', () => { if (isWork) resetTimer(); });
+    breakInput.addEventListener('change', () => {
+      if (!isWork) {
+        timeLeft = parseInt(breakInput.value) * 60;
+        timerDisplay.textContent = formatTime(timeLeft);
+      }
+    });
+
+    timerDisplay.textContent = formatTime(timeLeft);
+
+    // ====== Spotify Integración ======
+    const clientId = "1cc64379f36240daa6975df2a68b5e73"; 
+    const redirectUri = "http://127.0.0.1:5500/index.html"; 
+    const scopes = "streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state";
+
+    let accessToken = null;
+    let player;
+    let deviceId;
+
+    function loginSpotify() {
+      const url = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
+      window.location.href = url;
+    }
+
+    function getTokenFromUrl() {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      return params.get("access_token");
+    }
+
+    window.onload = () => {
+      accessToken = getTokenFromUrl();
+      if (accessToken) {
+        localStorage.setItem("spotifyToken", accessToken);
+        window.location.hash = "";
+        document.body.insertAdjacentHTML("beforeend", `<p style="color: #00ff99; font-weight: bold;">✅ Sesión iniciada en Spotify</p>`);
+      } else {
+        accessToken = localStorage.getItem("spotifyToken");
+        if (accessToken) {
+          document.body.insertAdjacentHTML("beforeend", `<p style="color: #00ff99; font-weight: bold;">✅ Sesión restaurada en Spotify</p>`);
+        }
+      }
+      timerDisplay.textContent = formatTime(timeLeft);
+    };
+
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      player = new Spotify.Player({
+        name: "Pomodoro Motivacional 🎵",
+        getOAuthToken: cb => { cb(accessToken); },
+        volume: 0.5
+      });
+
+      player.addListener("ready", ({ device_id }) => {
+        deviceId = device_id;
+        console.log("Spotify listo en dispositivo:", deviceId);
+      });
+
+      player.connect();
+    };
+
+    function playPlaylist(uri) {
+      fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: "PUT",
+        body: JSON.stringify({ context_uri: uri }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
+        },
+      });
+    }
+
+    function pauseMusic() {
+      fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
+        method: "PUT",
+        headers: { "Authorization": `Bearer ${accessToken}` }
+      });
+    }
+
+    function pomodoroPlay() {
+      if (!isRunning) {
+        startTimer();
+        playPlaylist("spotify:playlist:37i9dQZF1DXcBWIGoYBM5M");
+      }
+    }
+    function pomodoroPause() {
+      pauseTimer();
+      pauseMusic();
+    }
+    function pomodoroReset() {
+      resetTimer();
+      pauseMusic();
+    }
+  </script>
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+</body>
+</html>
