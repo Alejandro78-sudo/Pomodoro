@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>⏳ Pomodoro Motivacional + Spotify Premium</title>
+  <title>⏳ Pomodoro Motivacional + Música</title>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -30,7 +30,7 @@
       gap: 15px;
       margin-bottom: 20px;
     }
-    .buttons button, .spotify-btn {
+    .buttons button {
       padding: 12px 28px;
       border: none;
       border-radius: 12px;
@@ -41,7 +41,7 @@
       background: #1DB954;
       transition: background 0.3s, transform 0.2s;
     }
-    .buttons button:hover, .spotify-btn:hover {
+    .buttons button:hover {
       background: #17a44b;
       transform: scale(1.05);
     }
@@ -57,17 +57,17 @@
       justify-content: center;
       gap: 10px;
     }
-    .settings-block input[type="number"], .settings-block input[type="text"] {
+    .settings-block input[type="number"] {
       padding: 6px;
       border-radius: 8px;
       border: none;
       text-align: center;
       font-weight: bold;
     }
-    #spotifyStatus {
-      margin-top: 15px;
-      font-weight: bold;
-      color: #00ff99;
+    .music-player {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 500px;
     }
   </style>
 </head>
@@ -83,16 +83,18 @@
     <button onclick="pomodoroReset()">🔄 Reiniciar</button>
   </div>
 
-  <button class="spotify-btn" onclick="loginSpotify()">🎧 Iniciar sesión con Spotify</button>
-  <div id="spotifyStatus">🎵 No conectado a Spotify</div>
+  <!-- 🎵 Reproductor SoundCloud -->
+  <div class="music-player">
+    <iframe width="100%" height="152" scrolling="no" frameborder="no" allow="autoplay"
+      src="https://soundcloud.com/trending-music-amer/sets/jazz?si=11eae175f6734137b1ebe06d676cfe63&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing">
+    </iframe>
+  </div>
 
   <div class="settings-block">
     <label>Trabajo (min): <input type="number" id="workInput" value="25" min="1"></label>
     <label>Descanso (min): <input type="number" id="breakInput" value="5" min="1"></label>
-    <label>Spotify URL: <input type="text" id="spotifyLinkInput" placeholder="Pega playlist o álbum"></label>
   </div>
 
-  <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script>
     // ===== Pomodoro =====
     let timer = null;
@@ -151,106 +153,17 @@
 
     timerDisplay.textContent = formatTime(timeLeft);
 
-    // ===== Spotify Integration =====
-    const clientId = "1cc64379f36240daa6975df2a68b5e73";  // ⚠️ Pega aquí tu Client ID
-    const redirectUri = "https://alejandro78-sudo.github.io/Pomodoro/"; 
-    const scopes = "streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state";
-
-    let accessToken = null;
-    let player;
-    let deviceId;
-    let currentUri = "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M"; // por defecto
-
-    function loginSpotify() {
-      const url = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
-      window.location.href = url;
-    }
-
-    function getTokenFromUrl() {
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      return params.get("access_token");
-    }
-
-    window.onload = () => {
-      accessToken = getTokenFromUrl();
-      if (accessToken) {
-        localStorage.setItem("spotifyToken", accessToken);
-        window.location.hash = "";
-        document.getElementById("spotifyStatus").innerText = "✅ Sesión iniciada en Spotify";
-      } else {
-        accessToken = localStorage.getItem("spotifyToken");
-        if (accessToken) {
-          document.getElementById("spotifyStatus").innerText = "✅ Sesión restaurada en Spotify";
-        }
-      }
-    };
-
-    window.onSpotifyWebPlaybackSDKReady = () => {
-      player = new Spotify.Player({
-        name: "Pomodoro Motivacional 🎵",
-        getOAuthToken: cb => { cb(accessToken); },
-        volume: 0.5
-      });
-
-      player.addListener("ready", ({ device_id }) => {
-        deviceId = device_id;
-        console.log("Spotify listo en dispositivo:", deviceId);
-      });
-
-      player.connect();
-    };
-
-    function setSpotifyUriFromInput() {
-      const link = document.getElementById("spotifyLinkInput").value.trim();
-      if (!link) return;
-      if (link.includes("playlist")) {
-        const id = link.split("/playlist/")[1].split("?")[0];
-        currentUri = `spotify:playlist:${id}`;
-      } else if (link.includes("album")) {
-        const id = link.split("/album/")[1].split("?")[0];
-        currentUri = `spotify:album:${id}`;
-      } else {
-        alert("Link no válido de Spotify");
-      }
-    }
-
-    document.getElementById("spotifyLinkInput").addEventListener("change", setSpotifyUriFromInput);
-
-    function playSpotify() {
-      if (!deviceId || !accessToken) return;
-      fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-        method: "PUT",
-        body: JSON.stringify({ context_uri: currentUri }),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`
-        },
-      });
-    }
-
-    function pauseMusic() {
-      if (!deviceId || !accessToken) return;
-      fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
-        method: "PUT",
-        headers: { "Authorization": `Bearer ${accessToken}` }
-      });
-    }
-
-    // Vincular Pomodoro con Spotify
+    // Vincular Pomodoro con música
     function pomodoroPlay() {
       if (!isRunning) {
         startTimer();
-        playSpotify();
       }
     }
     function pomodoroPause() {
       pauseTimer();
-      pauseMusic();
     }
     function pomodoroReset() {
       resetTimer();
-      pauseMusic();
     }
   </script>
 </body>
