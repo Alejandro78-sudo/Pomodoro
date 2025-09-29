@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>⏳ Pomodoro Motivacional + Spotify</title>
+  <link rel="icon" type="image/png" href="pomodoro.png">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -26,6 +27,24 @@
     #timer {
       font-size: 4rem;
       margin: 20px 0;
+    }
+    .pomodoro-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 25px;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 25px;
+      padding: 40px 30px;
+      width: 400px;
+      min-height: 600px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      margin: auto;
+      position: relative;
+      z-index: 2;
     }
     .buttons {
       display: flex;
@@ -73,6 +92,39 @@
       border-radius: 12px;
       box-shadow: 0 5px 20px rgba(0,0,0,0.3);
       margin-top: 20px;
+      position: relative;
+      z-index: 10;
+    }
+    #spotifyBox {
+      border-radius: 12px;
+      background: #121212;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      margin-top: 20px;
+      font-family: Arial, sans-serif;
+      z-index: 10;
+      position: relative;
+    }
+    #rain-phrases {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .motivation-phrase {
+      position: absolute;
+      font-size: 1.1rem;
+      font-weight: bold;
+      opacity: 0.7;
+      color: #fff;
+      text-shadow: 1px 1px 8px #1e3c72;
+      background: rgba(30,60,114,0.15);
+      border-radius: 8px;
+      padding: 6px 18px;
+      max-width: 500px;
+      margin: 0;
     }
   </style>
 </head>
@@ -82,31 +134,65 @@
   <div class="pomodoro-container">
     <audio id="alarmSound" src="Yo no pierdo, YO GANO!.mp3" preload="auto"></audio>
     <div id="timer">25:00</div>
-
     <div class="buttons">
       <button onclick="pomodoroPlay()">▶️ Iniciar</button>
       <button onclick="pomodoroPause()">⏸️ Pausa</button>
       <button onclick="pomodoroReset()">🔄 Reiniciar</button>
     </div>
-
     <button class="spotify-btn" onclick="loginSpotify()">🎧 Iniciar sesión con Spotify</button>
-
     <div class="settings-block">
       <label>Trabajo (min): <input type="number" id="workInput" value="25" min="1"></label>
       <label>Descanso (min): <input type="number" id="breakInput" value="5" min="1"></label>
       <label>Spotify URL: <input type="text" id="spotifyLinkInput" placeholder="Pega playlist o álbum"></label>
     </div>
-
-    <iframe id="spotifyFrame" style="border-radius:12px"
+    <iframe id="spotifyFrame"
       src="https://open.spotify.com/embed/playlist/2L7kwPaWFbe9JldHkHfI83?utm_source=generator&theme=0"
       frameborder="0"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+      loading="lazy">
     </iframe>
+    <div id="spotifyBox">🎵 Ninguna playlist seleccionada</div>
   </div>
-
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script>
-    // ===== Pomodoro =====
+    // ====== FRASES MOTIVACIONALES ======
+    const phrases = [
+      "💪 ¡Tú puedes!",
+      "🚀 La disciplina vence al talento.",
+      "🔥 No pares ahora.",
+      "🌱 Cada día un paso más.",
+      "🎯 Concéntrate en tu meta.",
+      "⚡ Hazlo con pasión.",
+      "No tienes que ser grande para empezar, pero tienes que empezar para ser grande.",
+      "La disciplina supera a la motivación.",
+      "Un paso cada día te acerca más a tu meta.",
+      "La constancia convierte lo imposible en inevitable.",
+      "Haz hoy lo que otros no quieren, y mañana vivirás como otros no pueden.",
+      "El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
+      "El dolor es temporal, la satisfacción es para siempre.",
+      "Tu futuro se crea con lo que haces hoy, no mañana.",
+      "Si duele, es porque estás creciendo.",
+      "La acción vence al miedo.",
+      "Hazlo con pasión o no lo hagas.",
+      "La disciplina es el puente entre metas y logros.",
+      "No pares hasta estar orgulloso de ti.",
+      "El progreso, no la perfección, es lo que cuenta.",
+      "Los sueños no funcionan a menos que tú trabajes por ellos."
+    ];
+
+    // Mostrar frases fijas en posiciones aleatorias en el fondo
+    const rain = document.getElementById('rain-phrases');
+    rain.innerHTML = '';
+    phrases.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = 'motivation-phrase';
+      div.textContent = p;
+      div.style.top = `${Math.random() * 80 + 5}%`;
+      div.style.left = `${Math.random() * 80 + 5}%`;
+      rain.appendChild(div);
+    });
+
+    // ===== Pomodoro Timer =====
     let timer = null;
     let isRunning = false;
     let isWork = true;
@@ -162,15 +248,13 @@
     });
     timerDisplay.textContent = formatTime(timeLeft);
 
-    // ===== Spotify Integration =====
+    // ====== SPOTIFY INTEGRACIÓN ======
     const clientId = "1cc64379f36240daa6975df2a68b5e73";
     const redirectUri = "https://alejandro78-sudo.github.io/Pomodoro/";
     const scopes = "streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state";
 
     let accessToken = null;
-    let player;
-    let deviceId;
-    let currentUri = null;
+    let player, deviceId, currentUri = null;
 
     function loginSpotify() {
       const url = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
@@ -188,11 +272,11 @@
       if (accessToken) {
         localStorage.setItem("spotifyToken", accessToken);
         window.location.hash = "";
-        document.body.insertAdjacentHTML("beforeend", `<p style="color: #00ff99; font-weight: bold;">✅ Spotify OK</p>`);
+        document.getElementById("spotifyBox").innerHTML = "✅ Sesión iniciada en Spotify";
       } else {
         accessToken = localStorage.getItem("spotifyToken");
         if (accessToken) {
-          document.body.insertAdjacentHTML("beforeend", `<p style="color: #00ff99; font-weight: bold;">🔁 Sesión Spotify restaurada</p>`);
+          document.getElementById("spotifyBox").innerHTML = "✅ Sesión restaurada en Spotify";
         }
       }
     };
@@ -261,7 +345,6 @@
         if (currentUri) {
           playPlaylist(currentUri);
         } else {
-          // Si no se ha seleccionado una URI personalizada, usa una por defecto
           playPlaylist("spotify:playlist:37i9dQZF1DXcBWIGoYBM5M");
         }
       }
@@ -275,7 +358,6 @@
       pauseMusic();
     }
 
-    // conectar el listener del input
     document.getElementById("spotifyLinkInput").addEventListener("change", setSpotifyUriFromInput);
   </script>
 </body>
