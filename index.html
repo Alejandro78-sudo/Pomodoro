@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>⏳ Pomodoro Motivacional + Spotify</title>
+  <title>⏳ Pomodoro Motivacional + Spotify Premium</title>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -29,7 +29,6 @@
       display: flex;
       gap: 15px;
       margin-bottom: 20px;
-      justify-content: center;
     }
     .buttons button, .spotify-btn {
       padding: 12px 28px;
@@ -58,25 +57,24 @@
       justify-content: center;
       gap: 10px;
     }
-    .settings-block input {
+    .settings-block input[type="number"], .settings-block input[type="text"] {
       padding: 6px;
       border-radius: 8px;
       border: none;
       text-align: center;
       font-weight: bold;
     }
-    #spotifyFrame {
-      width: 100%;
-      max-width: 400px;
-      height: 380px;
-      border-radius: 12px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-      margin-top: 20px;
+    #spotifyStatus {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #00ff99;
     }
   </style>
 </head>
 <body>
   <h1>⏳ Pomodoro Motivacional</h1>
+
+  <audio id="alarmSound" src="Yo no pierdo, YO GANO!.mp3" preload="auto"></audio>
   <div id="timer">25:00</div>
 
   <div class="buttons">
@@ -86,17 +84,13 @@
   </div>
 
   <button class="spotify-btn" onclick="loginSpotify()">🎧 Iniciar sesión con Spotify</button>
+  <div id="spotifyStatus">🎵 No conectado a Spotify</div>
 
   <div class="settings-block">
     <label>Trabajo (min): <input type="number" id="workInput" value="25" min="1"></label>
     <label>Descanso (min): <input type="number" id="breakInput" value="5" min="1"></label>
     <label>Spotify URL: <input type="text" id="spotifyLinkInput" placeholder="Pega playlist o álbum"></label>
   </div>
-
-  <iframe id="spotifyFrame" src="" frameborder="0"
-    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-
-  <div id="spotifyBox">🎵 Ninguna playlist seleccionada</div>
 
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
   <script>
@@ -109,6 +103,7 @@
     const timerDisplay = document.getElementById("timer");
     const workInput = document.getElementById("workInput");
     const breakInput = document.getElementById("breakInput");
+    const alarmSound = document.getElementById("alarmSound");
 
     function formatTime(seconds) {
       const m = Math.floor(seconds / 60);
@@ -120,6 +115,7 @@
       if (!isRunning) return;
       timeLeft--;
       if (timeLeft <= 0) {
+        alarmSound.play();
         isWork = !isWork;
         timeLeft = (isWork ? parseInt(workInput.value) : parseInt(breakInput.value)) * 60;
       }
@@ -145,16 +141,25 @@
       timerDisplay.textContent = formatTime(timeLeft);
     }
 
+    workInput.addEventListener('change', () => { if (isWork) resetTimer(); });
+    breakInput.addEventListener('change', () => {
+      if (!isWork) {
+        timeLeft = parseInt(breakInput.value) * 60;
+        timerDisplay.textContent = formatTime(timeLeft);
+      }
+    });
+
     timerDisplay.textContent = formatTime(timeLeft);
 
     // ===== Spotify Integration =====
-    const clientId = "1cc64379f36240daa6975df2a68b5e73";
-    const redirectUri = "https://alejandro78-sudo.github.io/Pomodoro/";
+    const clientId = "1cc64379f36240daa6975df2a68b5e73;  // ⚠️ Pega aquí tu Client ID
+    const redirectUri = "https://alejandro78-sudo.github.io/Pomodoro/"; 
     const scopes = "streaming user-read-email user-read-private user-read-playback-state user-modify-playback-state";
 
     let accessToken = null;
-    let player, deviceId;
-    let currentUri = null;
+    let player;
+    let deviceId;
+    let currentUri = "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M"; // por defecto
 
     function loginSpotify() {
       const url = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
@@ -172,17 +177,16 @@
       if (accessToken) {
         localStorage.setItem("spotifyToken", accessToken);
         window.location.hash = "";
-        document.getElementById("spotifyBox").innerText = "✅ Sesión iniciada en Spotify";
+        document.getElementById("spotifyStatus").innerText = "✅ Sesión iniciada en Spotify";
       } else {
         accessToken = localStorage.getItem("spotifyToken");
         if (accessToken) {
-          document.getElementById("spotifyBox").innerText = "✅ Sesión restaurada en Spotify";
+          document.getElementById("spotifyStatus").innerText = "✅ Sesión restaurada en Spotify";
         }
       }
     };
 
     window.onSpotifyWebPlaybackSDKReady = () => {
-      if (!accessToken) return;
       player = new Spotify.Player({
         name: "Pomodoro Motivacional 🎵",
         getOAuthToken: cb => { cb(accessToken); },
@@ -191,7 +195,7 @@
 
       player.addListener("ready", ({ device_id }) => {
         deviceId = device_id;
-        console.log("Dispositivo Spotify listo:", deviceId);
+        console.log("Spotify listo en dispositivo:", deviceId);
       });
 
       player.connect();
@@ -203,21 +207,21 @@
       if (link.includes("playlist")) {
         const id = link.split("/playlist/")[1].split("?")[0];
         currentUri = `spotify:playlist:${id}`;
-        document.getElementById("spotifyFrame").src = `https://open.spotify.com/embed/playlist/${id}?utm_source=generator&theme=0`;
       } else if (link.includes("album")) {
         const id = link.split("/album/")[1].split("?")[0];
         currentUri = `spotify:album:${id}`;
-        document.getElementById("spotifyFrame").src = `https://open.spotify.com/embed/album/${id}?utm_source=generator&theme=0`;
       } else {
         alert("Link no válido de Spotify");
       }
     }
 
-    function playPlaylist(uri) {
+    document.getElementById("spotifyLinkInput").addEventListener("change", setSpotifyUriFromInput);
+
+    function playSpotify() {
       if (!deviceId || !accessToken) return;
       fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
         method: "PUT",
-        body: JSON.stringify({ context_uri: uri }),
+        body: JSON.stringify({ context_uri: currentUri }),
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${accessToken}`
@@ -229,34 +233,25 @@
       if (!deviceId || !accessToken) return;
       fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${deviceId}`, {
         method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`
-        }
+        headers: { "Authorization": `Bearer ${accessToken}` }
       });
     }
 
+    // Vincular Pomodoro con Spotify
     function pomodoroPlay() {
       if (!isRunning) {
         startTimer();
-        if (currentUri) {
-          playPlaylist(currentUri);
-        } else {
-          playPlaylist("spotify:playlist:37i9dQZF1DXcBWIGoYBM5M"); // Default playlist
-        }
+        playSpotify();
       }
     }
-
     function pomodoroPause() {
       pauseTimer();
       pauseMusic();
     }
-
     function pomodoroReset() {
       resetTimer();
       pauseMusic();
     }
-
-    document.getElementById("spotifyLinkInput").addEventListener("change", setSpotifyUriFromInput);
   </script>
 </body>
 </html>
