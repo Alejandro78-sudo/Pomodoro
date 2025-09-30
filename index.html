@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>⏳ Pomodoro Motivacional + Música</title>
+  <title>💪🏻Pomodoro Motivacional</title>
+  <link rel="icon" type="image/png" href="pomodoro.png">
   <style>
     body {
       font-family: 'Poppins', sans-serif;
@@ -16,20 +17,56 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      overflow-x: hidden;
     }
-    h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
+    h1 { font-size: 2.5rem; margin-bottom: 10px; }
+    #timer { font-size: 4rem; margin: 20px 0; }
+
+    /* ===== FRASES ANIMADAS ===== */
+    #rain-phrases {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
     }
-    #timer {
-      font-size: 4rem;
-      margin: 20px 0;
+    .motivation-phrase {
+      position: absolute;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 1px 1px 8px #1e3c72;
+      background: rgba(30,60,114,0.1);
+      border-radius: 8px;
+      padding: 4px 12px;
+      white-space: nowrap;
+      animation: floatDown linear forwards;
     }
-    .buttons {
+    @keyframes floatDown {
+      from { opacity: 0; transform: translateY(0); }
+      to   { opacity: 0.8; transform: translateY(100vh); }
+    }
+
+    /* ===== CONTENEDOR PRINCIPAL ===== */
+    .pomodoro-container {
       display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 25px;
+      padding: 40px 30px;
+      width: 90%;
+      max-width: 500px;
+      min-height: 600px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      margin: 20px auto;
+      z-index: 2;
     }
+    .buttons { gap: 15px; }
     .buttons button {
       padding: 12px 28px;
       border: none;
@@ -38,82 +75,227 @@
       font-weight: 600;
       cursor: pointer;
       color: #fff;
-      background: #1DB954;
+      box-shadow: 0 4px 14px rgba(30,60,114,0.15);
       transition: background 0.3s, transform 0.2s;
     }
-    .buttons button:hover {
-      background: #17a44b;
+    .buttons button:nth-of-type(1) {
+      background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+    }
+    .buttons button:nth-of-type(1):hover {
+      transform: scale(1.05);
+    }
+    .buttons button:nth-of-type(2) {
+      background: linear-gradient(90deg, #ffb347 0%, #ffcc33 100%);
+      color: #333;
+    }
+    .buttons button:nth-of-type(2):hover {
+      transform: scale(1.05);
+    }
+    .buttons button:nth-of-type(3) {
+      background: linear-gradient(90deg, #ff6b6b 0%, #f06595 100%);
+    }
+    .buttons button:nth-of-type(3):hover {
       transform: scale(1.05);
     }
     .settings-block {
-      margin-top: 20px;
+      background: rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 18px 28px;
+      margin: 18px 0;
       display: flex;
       flex-direction: column;
       gap: 10px;
+      width: 100%;
+      box-shadow: 0 4px 18px rgba(30,60,114,0.10);
+      align-items: center;
     }
     .settings-block label {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #fff;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      padding: 10px 15px;
+      transition: 0.3s ease-in-out;
+      width: 250px;
     }
     .settings-block input[type="number"] {
+      width: 60px;
       padding: 6px;
-      border-radius: 8px;
+      margin-left: 10px;
       border: none;
+      border-radius: 8px;
       text-align: center;
+      font-size: 1rem;
       font-weight: bold;
+      background: #fff;
+      color: #2a5298;
     }
+
+    /* 🎵 Estilos reproductor local */
     .music-player {
-      margin-top: 20px;
-      width: 100%;
-      max-width: 500px;
-    }
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.1);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+#progressBar {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 5px;
+  background: #38f9d7;
+  cursor: pointer;
+}
+.music-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 10px 0;
+}
+.music-buttons button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(90deg, #38f9d7, #43e97b);
+  transition: transform 0.2s;
+}
+.music-buttons button:hover { transform: scale(1.05); }
+#playlist {
+  margin-top: 15px;
+  list-style: none;
+  padding: 0;
+}
+#playlist li {
+  padding: 8px;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  background: rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+#playlist li:hover { background: rgba(255,255,255,0.3); }
+#playlist li.active { background: #43e97b; font-weight: bold; color: #000; }
+#playlistDropdown {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 500;
+  background: rgba(255,255,255,0.85);
+  color: #2a5298;
+  cursor: pointer;
+  width: 100%;
+  max-width: 250px;
+  text-align: center;
+}
+
   </style>
 </head>
 <body>
+  <div id="rain-phrases"></div>
   <h1>⏳ Pomodoro Motivacional</h1>
 
-  <audio id="alarmSound" src="Yo no pierdo, YO GANO!.mp3" preload="auto"></audio>
-  <div id="timer">25:00</div>
+  <div class="pomodoro-container">
+    <audio id="alarmSound" src="Yo no pierdo, YO GANO!.mp3" preload="auto"></audio>
+    
+    <div id="timer">25:00</div>
+    <div class="buttons">
+      <button onclick="pomodoroPlay()">▶️ Iniciar</button>
+      <button onclick="pomodoroPause()">⏸️ Pausa</button>
+      <button onclick="pomodoroReset()">🔄 Reiniciar</button>
+    </div>
 
-  <div class="buttons">
-    <button onclick="pomodoroPlay()">▶️ Iniciar</button>
-    <button onclick="pomodoroPause()">⏸️ Pausa</button>
-    <button onclick="pomodoroReset()">🔄 Reiniciar</button>
+    <div class="settings-block">
+      <label>Trabajo (min): 
+        <input type="number" id="workInput" value="25" min="1" max="90">
+      </label>
+      <label>Descanso (min): 
+        <input type="number" id="breakInput" value="5" min="1" max="30">
+      </label>
+    </div>
+
+<!-- 🎵 Reproductor Local Mejorado -->
+<div class="music-player">
+  <h2>🎶 Tu Música</h2>
+  
+  <!-- Barra de progreso -->
+  <div class="progress-container">
+    <span id="currentTime">0:00</span>
+    <input type="range" id="progressBar" value="0" min="0" max="100">
+    <span id="duration">0:00</span>
   </div>
 
-  <!-- 🎵 Reproductor SoundCloud -->
-<!-- 🎵 Reproductor YouTube -->
-<div class="music-player">
-  <iframe width="100%" height="180" 
-    src="https://www.youtube.com/watch?v=ZsMb66Lb9Sc&list=PLZWdplz_BLqcKa8uZ5Xzg2dIqcxqIkJp4" 
-    title="YouTube playlist player"
-    frameborder="0"
-    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
-    allowfullscreen>
-  </iframe>
+  <!-- Botones -->
+  <div class="music-buttons">
+    <button onclick="prevSong()">⏮️</button>
+    <button onclick="playSong()">▶️</button>
+    <button onclick="pauseSong()">⏸️</button>
+    <button onclick="nextSong()">⏭️</button>
+  </div>
+
+  <!-- Lista desplegable -->
+  <select id="playlistDropdown"></select>
+
+  <audio id="localPlayer" preload="metadata"></audio>
+</div>
+
+
+  <!-- Lista de reproducción -->
+  <ul id="playlist"></ul>
+
+  <audio id="localPlayer" preload="metadata"></audio>
 </div>
 
 
   <script>
-    // ===== Pomodoro =====
-    let timer = null;
-    let isRunning = false;
-    let isWork = true;
-    let timeLeft = 25 * 60;
+    // ===== FRASES MOTIVACIONALES =====
+    const phrases = ["💪 ¡Tú puedes!","🚀 La disciplina vence al talento.","🔥 No pares ahora.","🌱 Cada día un paso más.","🎯 Concéntrate en tu meta.","⚡ Hazlo con pasión."];
+    const rain = document.getElementById('rain-phrases');
+    function generatePhrases() {
+      phrases.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'motivation-phrase';
+        div.textContent = p;
+        div.style.left = `${Math.random() * 90}vw`;
+        div.style.top = `${Math.random() * 80}vh`;
+        div.style.animationDuration = `${5 + Math.random() * 10}s`;
+        div.style.animationDelay = `${Math.random() * 10}s`;
+        div.style.fontSize = `${0.8 + Math.random() * 1.5}rem`;
+        div.style.opacity = `${0.3 + Math.random() * 0.7}`;
+        rain.appendChild(div);
+        const totalDuration = (parseFloat(div.style.animationDuration) + parseFloat(div.style.animationDelay)) * 1000;
+        setTimeout(() => div.remove(), totalDuration);
+      });
+    }
+    generatePhrases();
+    setInterval(generatePhrases, 20000);
 
+    // ===== POMODORO TIMER =====
+    let timer = null, isRunning = false, isWork = true, timeLeft = 25*60;
     const timerDisplay = document.getElementById("timer");
     const workInput = document.getElementById("workInput");
     const breakInput = document.getElementById("breakInput");
     const alarmSound = document.getElementById("alarmSound");
-
     function formatTime(seconds) {
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-      return `${m}:${s < 10 ? "0" : ""}${s}`;
+      const m = Math.floor(seconds / 60), s = seconds % 60;
+      return `${m}:${s<10?"0":""}${s}`;
     }
-
     function updateTimer() {
       if (!isRunning) return;
       timeLeft--;
@@ -124,18 +306,12 @@
       }
       timerDisplay.textContent = formatTime(timeLeft);
     }
-
     function startTimer() {
       if (isRunning) return;
       isRunning = true;
       timer = setInterval(updateTimer, 1000);
     }
-
-    function pauseTimer() {
-      clearInterval(timer);
-      isRunning = false;
-    }
-
+    function pauseTimer() { clearInterval(timer); isRunning = false; }
     function resetTimer() {
       clearInterval(timer);
       isRunning = false;
@@ -143,29 +319,98 @@
       timeLeft = parseInt(workInput.value) * 60;
       timerDisplay.textContent = formatTime(timeLeft);
     }
-
-    workInput.addEventListener('change', () => { if (isWork) resetTimer(); });
-    breakInput.addEventListener('change', () => {
-      if (!isWork) {
-        timeLeft = parseInt(breakInput.value) * 60;
-        timerDisplay.textContent = formatTime(timeLeft);
-      }
-    });
-
+    function pomodoroPlay(){ if (!isRunning) startTimer(); playSong(); }
+    function pomodoroPause(){ pauseTimer(); pauseSong(); }
+    function pomodoroReset(){ resetTimer(); pauseSong(); }
     timerDisplay.textContent = formatTime(timeLeft);
 
-    // Vincular Pomodoro con música
-    function pomodoroPlay() {
-      if (!isRunning) {
-        startTimer();
-      }
-    }
-    function pomodoroPause() {
-      pauseTimer();
-    }
-    function pomodoroReset() {
-      resetTimer();
-    }
+ // ===== REPRODUCTOR LOCAL =====
+const songs = [
+  { name: "Cigarette", file: "Cigarette.mp3" },
+  { name: "eminnemmix", file: "eminnemmix.mp3" },
+  { name: "Pretty Little Devil", file: "Pretty Little Devil.mp3" },
+  { name: "Sinner.mp3", file: "Sinner.mp3" }
+
+];
+
+let currentSong = 0;
+const localPlayer = document.getElementById("localPlayer");
+const progressBar = document.getElementById("progressBar");
+const currentTimeEl = document.getElementById("currentTime");
+const durationEl = document.getElementById("duration");
+const playlistDropdown = document.getElementById("playlistDropdown");
+
+// 📝 Llenar el desplegable
+function loadPlaylist() {
+  playlistDropdown.innerHTML = "";
+  songs.forEach((song, index) => {
+    const option = document.createElement("option");
+    option.value = index;
+    option.textContent = song.name;
+    if (index === currentSong) option.selected = true;
+    playlistDropdown.appendChild(option);
+  });
+}
+
+// ▶️ Reproducir
+function playSong() {
+  localPlayer.src = songs[currentSong].file;
+  localPlayer.play();
+  loadPlaylist();
+}
+
+// ⏸️ Pausar
+function pauseSong() { localPlayer.pause(); }
+
+// ⏭️ Siguiente
+function nextSong() {
+  currentSong = (currentSong + 1) % songs.length;
+  playSong();
+}
+
+// ⏮️ Anterior
+function prevSong() {
+  currentSong = (currentSong - 1 + songs.length) % songs.length;
+  playSong();
+}
+
+// 🎚️ Actualizar barra
+localPlayer.addEventListener("timeupdate", () => {
+  if (localPlayer.duration) {
+    const progress = (localPlayer.currentTime / localPlayer.duration) * 100;
+    progressBar.value = progress;
+    currentTimeEl.textContent = formatTime(localPlayer.currentTime);
+    durationEl.textContent = formatTime(localPlayer.duration);
+  }
+});
+
+// ⏩ Adelantar/retroceder desde la barra
+progressBar.addEventListener("input", () => {
+  if (localPlayer.duration) {
+    localPlayer.currentTime = (progressBar.value / 100) * localPlayer.duration;
+  }
+});
+
+// 🎶 Cambiar canción desde desplegable
+playlistDropdown.addEventListener("change", (e) => {
+  currentSong = parseInt(e.target.value);
+  playSong();
+});
+
+// 🎶 Auto-siguiente
+localPlayer.addEventListener("ended", nextSong);
+
+// ⏱️ Formato mm:ss
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s < 10 ? "0" : ""}${s}`;
+}
+
+// Inicializar lista
+loadPlaylist();
+
+
   </script>
 </body>
 </html>
