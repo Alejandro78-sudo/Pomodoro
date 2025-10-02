@@ -24,8 +24,6 @@
     }
     h1 { font-size: 2rem; margin-bottom: 10px; }
     #timer { font-size: 3rem; margin: 20px 0; }
-
-    /* FRASES */
     #rain-phrases {
       position: fixed;
       top: 0;
@@ -38,17 +36,24 @@
       position: absolute;
       font-weight: bold;
       color: white;
-      text-shadow: 2px 2px 10px #000;
+      text-shadow: 2px 3px 6px #000;
       border-radius: 8px;
-      padding: 4px 12px;
+      padding: 8px 24px;
       white-space: nowrap;
+      opacity: 0;
+      animation: fadeMotivation 4s linear forwards;
+      pointer-events: none;
+      font-size: 1.2rem;
+      left: 50%; /* Se sobrescribe en JS */
+      top: 10vh; /* Se sobrescribe en JS */
+      transform: translateX(-50%);
     }
-    @keyframes floatDown {
-      from { opacity: 0; transform: translateY(0); }
-      to   { opacity: 0.8; transform: translateY(100vh); }
+    @keyframes fadeMotivation {
+      0% { opacity: 0; }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      100% { opacity: 0; }
     }
-
-    /* CONTENEDOR */
     .pomodoro-container {
       display: flex;
       flex-direction: column;
@@ -79,7 +84,6 @@
     .buttons button:nth-of-type(1) { background: linear-gradient(90deg, #43e97b, #38f9d7); }
     .buttons button:nth-of-type(2) { background: linear-gradient(90deg, #ffb347, #ffcc33); }
     .buttons button:nth-of-type(3) { background: linear-gradient(90deg, #ff6b6b, #f06595); color: white; }
-
     .settings-block {
       background: rgba(255,255,255,0.12);
       border-radius: 16px;
@@ -109,8 +113,6 @@
       border-radius: 6px;
       border: none;
     }
-
-    /* 🎵 Reproductor */
     .music-player {
       margin-top: 20px;
       padding: 15px;
@@ -156,8 +158,6 @@
       background: white;
       width: 100%;
     }
-
-    /* RESPONSIVE */
     @media (max-width: 600px) {
       h1 { font-size: 1.5rem; }
       #timer { font-size: 2.2rem; }
@@ -167,9 +167,10 @@
   </style>
 </head>
 <body>
-  <div id="rain-phrases"></div>
+  <div id="rain-phrases">
+    <div id="motivation-fade" class="motivation-phrase"></div>
+  </div>
   <h1>⏳ Pomodoro Motivacional</h1>
-
   <div class="pomodoro-container">
     <audio id="alarmSound" src="Yo no pierdo, YO GANO!.mp3" preload="auto"></audio>
     <div id="timer">25:00</div>
@@ -182,8 +183,6 @@
       <label>Trabajo (min): <input type="number" id="workInput" value="25" min="1" max="90"></label>
       <label>Descanso (min): <input type="number" id="breakInput" value="5" min="1" max="30"></label>
     </div>
-
-    <!-- 🎵 Reproductor -->
     <div class="music-player">
       <h2>🎶 Tu Música</h2>
       <div class="progress-container">
@@ -201,52 +200,111 @@
       <audio id="audioPlayer" preload="metadata"></audio>
     </div>
   </div>
-
   <script>
-    // FRASES
-    const phrases = ["💪 ¡Tú puedes!","🚀 La disciplina vence al talento.","🔥 No pares ahora.","🌱 Cada día un paso más.","🎯 Concéntrate en tu meta.","⚡ Hazlo con pasión."];
-    const rain = document.getElementById('rain-phrases');
-    function generatePhrases() {
-      phrases.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'motivation-phrase';
-        div.textContent = p;
-        div.style.left = `${Math.random() * 90}vw`;
-        div.style.top = `${Math.random() * 80}vh`;
-        div.style.animation = `floatDown ${5 + Math.random() * 10}s linear`;
-        rain.appendChild(div);
-        setTimeout(() => div.remove(), 15000);
-      });
+    // FRASES MOTIVACIONALES (una a la vez, distribuidas y con fade)
+    const phrases = [
+      "💪 ¡Tú puedes!","🚀 La disciplina vence al talento.","🔥 No pares ahora.","🌱 Cada día un paso más.",
+      "🎯 Concéntrate en tu meta.","⚡ Hazlo con pasión.","No tienes que ser grande para empezar, pero tienes que empezar para ser grande.",
+      "La disciplina supera a la motivación.","Un paso cada día te acerca más a tu meta.","La constancia convierte lo imposible en inevitable.",
+      "Haz hoy lo que otros no quieren, y mañana vivirás como otros no pueden.","El éxito es la suma de pequeños esfuerzos repetidos día tras día.",
+      "El dolor es temporal, la satisfacción es para siempre.","Tu futuro se crea con lo que haces hoy, no mañana.","Si duele, es porque estás creciendo.",
+      "La acción vence al miedo.","Hazlo con pasión o no lo hagas.","La disciplina es el puente entre metas y logros.",
+      "No pares hasta estar orgulloso de ti.","El progreso, no la perfección, es lo que cuenta.","Los sueños no funcionan a menos que tú trabajes por ellos."
+    ];
+
+    const fadeDiv = document.getElementById('motivation-fade');
+    let phraseIndex = 0;
+
+    // Calcula posiciones distribuidas evitando el centro (30%-70%)
+    function getDistributedPositions(n) {
+      const positions = [];
+      for (let i = 0; i < n; i++) {
+        let y = (i + 0.5) * (100 / n);
+        if (y > 30 && y < 70) y = y < 50 ? 25 : 75;
+        let x;
+        if (i % 2 === 0) {
+          x = Math.random() * 25 + 5; // 5% a 30%
+        } else {
+          x = Math.random() * 25 + 65; // 65% a 90%
+        }
+        positions.push({x, y});
+      }
+      return positions;
     }
-    generatePhrases();
-    setInterval(generatePhrases, 20000);
+    const positions = getDistributedPositions(phrases.length);
+
+    function showNextPhrase() {
+      fadeDiv.textContent = phrases[phraseIndex];
+      fadeDiv.style.left = `${positions[phraseIndex].x}vw`;
+      fadeDiv.style.top = `${positions[phraseIndex].y}vh`;
+      fadeDiv.style.animation = 'none';
+      void fadeDiv.offsetWidth; // Reinicia la animación
+      fadeDiv.style.animation = '';
+      phraseIndex = (phraseIndex + 1) % phrases.length;
+    }
+    showNextPhrase();
+    setInterval(showNextPhrase, 4000);
 
     // POMODORO
-    if (timeLeft <= 0) {
-  // 🔉 Bajar volumen de la música antes de sonar la alarma
-  let fade = setInterval(() => {
-    if (audioPlayer.volume > 0.1) {
-      audioPlayer.volume -= 0.05;
-    } else {
-      clearInterval(fade);
-      audioPlayer.pause();          // ⏸️ Pausar música
-      audioPlayer.currentTime = 0;  // Reiniciar música al inicio (opcional)
-      alarmSound.play();            // 🔔 Suena la alarma
-    }
-  }, 200);
-}
+    let timer = null;
+    let isRunning = false;
+    let isWork = true;
+    let timeLeft = 25 * 60;
 
-    function startTimer(){ if(!isRunning){ isRunning=true; timer=setInterval(updateTimer,1000);} }
-    function pauseTimer(){ clearInterval(timer); isRunning=false; }
-    function resetTimer(){
-      clearInterval(timer); isRunning=false; isWork=true;
-      timeLeft=parseInt(workInput.value)*60;
-      timerDisplay.textContent=formatTime(timeLeft);
+    const timerDisplay = document.getElementById("timer");
+    const workInput = document.getElementById("workInput");
+    const breakInput = document.getElementById("breakInput");
+    const alarmSound = document.getElementById("alarmSound");
+    const audioPlayer = document.getElementById("audioPlayer");
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s < 10 ? "0" : ""}${s}`;
     }
-    function pomodoroPlay(){ if(!isRunning) startTimer(); playSong(); }
-    function pomodoroPause(){ pauseTimer(); pauseSong(); }
-    function pomodoroReset(){ resetTimer(); pauseSong(); }
-    timerDisplay.textContent=formatTime(timeLeft);
+
+    function updateTimer() {
+      if (!isRunning) return;
+      timeLeft--;
+      if (timeLeft <= 0) {
+        pauseSong(); // Pausa la música antes de la alarma
+        alarmSound.play();
+        alarmSound.onended = () => {
+          resumeSong(); // Reanuda la música cuando termina la alarma
+        };
+        isWork = !isWork;
+        timeLeft = (isWork ? parseInt(workInput.value) : parseInt(breakInput.value)) * 60;
+      }
+      timerDisplay.textContent = formatTime(timeLeft);
+    }
+
+    function startTimer() {
+      if (isRunning) return;
+      isRunning = true;
+      timer = setInterval(updateTimer, 1000);
+    }
+    function pauseTimer() {
+      clearInterval(timer);
+      isRunning = false;
+    }
+    function resetTimer() {
+      clearInterval(timer);
+      isRunning = false;
+      isWork = true;
+      timeLeft = parseInt(workInput.value) * 60;
+      timerDisplay.textContent = formatTime(timeLeft);
+    }
+    function pomodoroPlay() { if(!isRunning) startTimer(); resumeSong(); }
+    function pomodoroPause() { pauseTimer(); pauseSong(); }
+    function pomodoroReset() { resetTimer(); pauseSong(); }
+    workInput.addEventListener('change', () => { if (isWork) resetTimer(); });
+    breakInput.addEventListener('change', () => {
+      if (!isWork) {
+        timeLeft = parseInt(breakInput.value) * 60;
+        timerDisplay.textContent = formatTime(timeLeft);
+      }
+    });
+    timerDisplay.textContent = formatTime(timeLeft);
 
     // 🎵 REPRODUCTOR
     const songs=[
@@ -273,7 +331,18 @@
         playlistDropdown.appendChild(opt);
       });
     }
-    function playSong(){ audioPlayer.src=songs[currentSong].file; audioPlayer.play(); loadPlaylist(); }
+    function playSong(){
+      // Solo cambia la canción si es diferente
+      if(audioPlayer.src !== songs[currentSong].file) {
+        audioPlayer.src=songs[currentSong].file;
+      }
+      audioPlayer.play();
+      loadPlaylist();
+    }
+    function resumeSong() {
+      // Solo reanuda si está pausado
+      if(audioPlayer.paused) audioPlayer.play();
+    }
     function pauseSong(){ audioPlayer.pause(); }
     function nextSong(){ currentSong=(currentSong+1)%songs.length; playSong(); }
     function prevSong(){ currentSong=(currentSong-1+songs.length)%songs.length; playSong(); }
